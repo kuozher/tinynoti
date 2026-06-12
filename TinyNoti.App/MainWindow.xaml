@@ -1,0 +1,429 @@
+<Window x:Class="TinyNoti.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="TinyNoti"
+        Width="1040"
+        Height="720"
+        MinWidth="960"
+        MinHeight="620"
+        Background="#EEF2F7"
+        Foreground="{StaticResource TextBrush}"
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded">
+    <Window.Resources>
+        <Style x:Key="PageTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="30" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#0F172A" />
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#0F172A" />
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#475569" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="CaptionText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="LineHeight" Value="18" />
+        </Style>
+
+        <Style x:Key="PanelCard" TargetType="Border">
+            <Setter Property="Background" Value="#FDFEFF" />
+            <Setter Property="BorderBrush" Value="#D8E0EC" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="18" />
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#2563EB" />
+            <Setter Property="BorderBrush" Value="#2563EB" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1D4ED8" />
+                    <Setter Property="BorderBrush" Value="#1D4ED8" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SubtleButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#F8FAFC" />
+            <Setter Property="BorderBrush" Value="#D8E0EC" />
+            <Setter Property="Foreground" Value="#334155" />
+        </Style>
+
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#FFF7F7" />
+            <Setter Property="BorderBrush" Value="#FECACA" />
+            <Setter Property="Foreground" Value="#B91C1C" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FEE2E2" />
+                    <Setter Property="BorderBrush" Value="#FCA5A5" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="AnchorSelectorItem" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Chrome"
+                                Padding="10,9"
+                                Background="#F8FAFC"
+                                BorderBrush="#D8E0EC"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#F1F5F9" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#EAF1FF" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#2563EB" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SingleLineNumberBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="22">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="278" />
+            <ColumnDefinition Width="18" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Style="{StaticResource PanelCard}" Padding="20">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock Text="TinyNoti" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Notification mirror overlay"
+                               Style="{StaticResource CaptionText}"
+                               Margin="0,4,0,0" />
+
+                    <Border Margin="0,20,0,0"
+                            Padding="14"
+                            Background="#F8FAFC"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Ellipse Width="9"
+                                     Height="9"
+                                     Fill="{Binding AccessStatusBrush}"
+                                     VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding AccessStatusText, StringFormat=Notification access: {0}}"
+                                       Foreground="#0F172A"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap" />
+                        </Grid>
+                    </Border>
+                    <TextBlock Text="{Binding MirroringStatusText}"
+                               Foreground="#B45309"
+                               FontWeight="SemiBold"
+                               Margin="2,8,0,0"
+                               TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasMirroringStatus}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <StackPanel Margin="0,18,0,0">
+                        <Button Content="Request access"
+                                Style="{StaticResource PrimaryButton}"
+                                Click="RequestAccess_Click" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Separator Margin="0,18,0,16" Background="#E2E8F0" />
+                    <TextBlock Text="Runtime"
+                               Style="{StaticResource SectionTitle}"
+                               Margin="0,0,0,10" />
+                    <CheckBox Content="Pause mirroring"
+                              IsChecked="{Binding Settings.IsPaused}" />
+                    <CheckBox Content="Start with Windows"
+                              IsChecked="{Binding Settings.StartWithWindows}"
+                              Margin="0,8,0,0" />
+                    <TextBlock Text="Changes save automatically."
+                               Style="{StaticResource CaptionText}"
+                               FontSize="12"
+                               Margin="2,14,0,0" />
+                    <TextBlock Text="{Binding OperationStatusText}"
+                               Margin="2,8,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Setter Property="FontSize" Value="12" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasOperationStatus}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="18" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.16*" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource PanelCard}">
+                    <StackPanel>
+                        <TextBlock Text="Overlay position" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Choose where notifications appear and how far they sit from the screen edge."
+                                   Style="{StaticResource CaptionText}"
+                                   Margin="0,6,0,16" />
+
+                        <TextBlock Text="Anchor" Style="{StaticResource FieldLabel}" />
+                        <ListBox ItemsSource="{Binding AnchorOptions}"
+                                 SelectedValue="{Binding Settings.Anchor}"
+                                 SelectedValuePath="Value"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 ItemContainerStyle="{StaticResource AnchorSelectorItem}">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Label}"
+                                               FontWeight="SemiBold"
+                                               Foreground="#1E293B" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Screen" Style="{StaticResource FieldLabel}" />
+                                    <ComboBox ItemsSource="{Binding ScreenOptions}"
+                                              DisplayMemberPath="Label"
+                                              SelectedValuePath="Index"
+                                              SelectedValue="{Binding Settings.ScreenIndex}"
+                                              IsEnabled="{Binding HasMultipleScreens}" />
+                                </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Auto-hide seconds" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding Settings.AutoHideSeconds, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SingleLineNumberBox}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Horizontal offset" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding Settings.OffsetX, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SingleLineNumberBox}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Vertical offset" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding Settings.OffsetY, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SingleLineNumberBox}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource PanelCard}">
+                    <StackPanel>
+                        <TextBlock Text="Filters" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Comma-separated, case-insensitive partial matches against app name or AUMID."
+                                   Style="{StaticResource CaptionText}"
+                                   Margin="0,6,0,16" />
+
+                        <TextBlock Text="Mode" Style="{StaticResource FieldLabel}" />
+                        <ComboBox ItemsSource="{Binding FilterModeOptions}"
+                                  SelectedItem="{Binding Settings.FilterMode}" />
+
+                        <TextBlock Text="Patterns" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
+                        <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
+                                 MinHeight="70"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 ToolTip="Example: Phone Link, Slack, Microsoft Teams" />
+
+                        <TextBlock Text="Example: Phone Link, Slack. Blacklist hides matches; Whitelist shows only matches."
+                                   Style="{StaticResource CaptionText}"
+                                   Margin="0,12,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="2" Style="{StaticResource PanelCard}">
+                <DockPanel LastChildFill="True">
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Recent notifications"
+                                   Style="{StaticResource SectionTitle}"
+                                   VerticalAlignment="Center" />
+                        <Border Grid.Column="1"
+                                Width="18"
+                                Height="18"
+                                Background="#EFF6FF"
+                                BorderBrush="#BFDBFE"
+                                BorderThickness="1"
+                                CornerRadius="9"
+                                ToolTipService.InitialShowDelay="500"
+                                ToolTip="Local history from this app session. Cards open URLs first, then app rules, then the source app. Images appear only when Windows exposes a readable URI.">
+                            <TextBlock Text="i"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="#2563EB"
+                                       FontSize="11"
+                                       FontWeight="SemiBold" />
+                        </Border>
+                        <TextBlock Grid.Column="3"
+                                   Text="History limit"
+                                   Style="{StaticResource FieldLabel}"
+                                   VerticalAlignment="Center"
+                                   Margin="0" />
+                        <TextBox Grid.Column="5"
+                                 Text="{Binding Settings.HistoryLimit, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource SingleLineNumberBox}"
+                                 MinHeight="30"
+                                 Padding="8,5" />
+                        <Button Grid.Column="7"
+                                Content="Open overlay"
+                                Style="{StaticResource SubtleButton}"
+                                Click="ShowRecent_Click"
+                                Padding="12,6" />
+                        <Button Grid.Column="9"
+                                Content="Clear all"
+                                Style="{StaticResource DangerButton}"
+                                Click="ClearAll_Click"
+                                Padding="12,6" />
+                    </Grid>
+
+                    <ListBox ItemsSource="{Binding History}"
+                             MaxHeight="340"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="{StaticResource TextBrush}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12"
+                                        Margin="0,0,0,9"
+                                        Background="#F8FAFC"
+                                        BorderBrush="#E2E8F0"
+                                        BorderThickness="1"
+                                        CornerRadius="8">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Text="{Binding AppName}"
+                                                   Foreground="{StaticResource AccentBrush}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding TimeText}"
+                                                   Foreground="{StaticResource MutedTextBrush}" />
+                                        <TextBlock Grid.Row="1"
+                                                   Grid.ColumnSpan="2"
+                                                   Text="{Binding Title}"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,5,0,0"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="2"
+                                                   Grid.ColumnSpan="2"
+                                                   Text="{Binding Body}"
+                                                   Foreground="{StaticResource MutedTextBrush}"
+                                                   Margin="0,4,0,0"
+                                                   TextWrapping="Wrap"
+                                                   MaxHeight="42" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

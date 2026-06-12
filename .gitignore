@@ -1,0 +1,39 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+AppPackages/
+TestResults/
+
+# IDE and editor files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET generated files
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts.log
+
+# Local certificates and package signing material
+*.pfx
+*.cer
+*.pvk
+*.spc
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+Thumbs.db
+Desktop.ini
+
+# Local handoff notes
+HANDOFF.md
