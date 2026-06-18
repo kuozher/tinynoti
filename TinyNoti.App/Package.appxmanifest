@@ -10,7 +10,7 @@
   <Identity
     Name="TinyNoti"
     Publisher="CN=TinyNoti"
-    Version="0.1.1.8" />
+    Version="0.1.1.9" />
 
   <Properties>
     <DisplayName>TinyNoti</DisplayName>
