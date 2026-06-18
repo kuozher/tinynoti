@@ -33,7 +33,7 @@ public sealed class AppController : IDisposable
         _store = new NotificationStore(_settings.HistoryLimit);
         _overlay = new OverlayWindow();
         _mainWindow = new MainWindow(this, _mainViewModel);
-        _launchResolver = new LaunchTargetResolver(DefaultLaunchRules());
+        _launchResolver = new LaunchTargetResolver();
         _trayIcon = CreateTrayIcon();
         _operationStatusTimer = new DispatcherTimer
         {
@@ -404,7 +404,7 @@ public sealed class AppController : IDisposable
 
         var availableHeight = PrepareOverlaySizing();
         _overlay.SetCards(cards, IsLeftAnchored());
-        var shouldAnimateShow = _overlay.PrepareShowForLayout();
+        var shouldAnimateShow = _overlay.PrepareShowForLayout(GetTargetMonitorBounds());
         _overlay.UpdateLayout();
         _overlay.FitToContentHeight(availableHeight);
         _overlay.UpdateLayout();
@@ -416,7 +416,7 @@ public sealed class AppController : IDisposable
     {
         var availableHeight = PrepareOverlaySizing();
         _overlay.SetEmptyRecentState(IsLeftAnchored());
-        var shouldAnimateShow = _overlay.PrepareShowForLayout();
+        var shouldAnimateShow = _overlay.PrepareShowForLayout(GetTargetMonitorBounds());
         _overlay.UpdateLayout();
         _overlay.FitToContentHeight(availableHeight);
         _overlay.UpdateLayout();
@@ -461,6 +461,12 @@ public sealed class AppController : IDisposable
         return screens[_settings.ScreenIndex];
     }
 
+    private WindowBounds GetTargetMonitorBounds()
+    {
+        var bounds = GetTargetScreen().Bounds;
+        return new WindowBounds(bounds.Left, bounds.Top, bounds.Right, bounds.Bottom);
+    }
+
     private NotifyIcon CreateTrayIcon()
     {
         var menu = new ContextMenuStrip();
@@ -492,12 +498,4 @@ public sealed class AppController : IDisposable
         return File.Exists(iconPath) ? new Icon(iconPath) : SystemIcons.Application;
     }
 
-    private static IReadOnlyList<AppLaunchRule> DefaultLaunchRules()
-    {
-        return
-        [
-            new AppLaunchRule("Asana task", "asana", @"(?:task|tasks|/0/0/)(?<id>\d+)", "https://app.asana.com/0/0/${id}"),
-            new AppLaunchRule("Slack channel", "slack", @"(?<url>slack://[^\s]+)", "${url}")
-        ];
-    }
 }

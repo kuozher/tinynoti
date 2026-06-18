@@ -27,11 +27,25 @@ public sealed class LaunchTargetResolver
         @"https?://[^\s<>'"")\]]+",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    private static readonly IReadOnlyList<AppLaunchRule> BuiltInRules =
+    [
+        new AppLaunchRule(
+            "Asana task",
+            "asana",
+            @"(?:tasks?(?:[/\s:]+)|/0/0/)(?<id>\d+)",
+            "https://app.asana.com/0/0/${id}"),
+        new AppLaunchRule(
+            "Slack deep link",
+            "slack",
+            @"(?<url>slack://[^\s<>'"")\]]+)",
+            "${url}")
+    ];
+
     private readonly IReadOnlyList<AppLaunchRule> _rules;
 
     public LaunchTargetResolver(IReadOnlyList<AppLaunchRule>? rules = null)
     {
-        _rules = rules ?? Array.Empty<AppLaunchRule>();
+        _rules = rules ?? BuiltInRules;
     }
 
     public static LaunchHint Resolve(NotificationSnapshot snapshot)

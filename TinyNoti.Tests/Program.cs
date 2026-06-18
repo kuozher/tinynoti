@@ -4,10 +4,13 @@ var tests = new (string Name, Action Body)[]
 {
     ("extracts first https url from notification text", UrlExtraction),
     ("matches app specific launch rule", AppSpecificLaunchRule),
+    ("resolves built-in Asana task links", BuiltInAsanaLaunchRule),
+    ("resolves built-in Slack deep links", BuiltInSlackLaunchRule),
     ("filters blacklist and whitelist modes", Filtering),
     ("stacks repeated notification events and removes by display id", NotificationStoreState),
     ("trims history by display id", NotificationStoreTrimHistory),
-    ("calculates bottom right overlay positions", OverlayPlacement)
+    ("calculates bottom right overlay positions", OverlayPlacement),
+    ("keeps overlay below fullscreen foreground windows", FullscreenTopmostPolicy)
 };
 
 var failed = 0;
@@ -78,6 +81,34 @@ static void AppSpecificLaunchRule()
     AssertEqual("https://app.asana.com/0/0/445566", hint.Target);
 }
 
+static void BuiltInAsanaLaunchRule()
+{
+    var hint = LaunchTargetResolver.Resolve(Snapshot(
+        "Asana",
+        "app.asana.desktop") with
+    {
+        Body = "Task 445566 was updated",
+        RawTextLines = ["Task updated", "Task 445566 was updated"]
+    });
+
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("https://app.asana.com/0/0/445566", hint.Target);
+}
+
+static void BuiltInSlackLaunchRule()
+{
+    var hint = LaunchTargetResolver.Resolve(Snapshot(
+        "Slack",
+        "com.slack.desktop") with
+    {
+        Body = "Open slack://channel?team=T123&id=C456",
+        RawTextLines = ["New message", "Open slack://channel?team=T123&id=C456"]
+    });
+
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("slack://channel?team=T123&id=C456", hint.Target);
+}
+
 static void Filtering()
 {
     var blacklist = new NotificationFilter(FilterMode.Blacklist, ["Slack"]);
@@ -124,6 +155,24 @@ static void OverlayPlacement()
     AssertEqual(912, cards[0].Y);
     AssertEqual(1536, cards[1].X);
     AssertEqual(808, cards[1].Y);
+}
+
+static void FullscreenTopmostPolicy()
+{
+    var monitor = new WindowBounds(0, 0, 1920, 1080);
+
+    AssertFalse(
+        OverlayTopmostPolicy.ShouldUseTopmost(new WindowBounds(0, 0, 1920, 1080), monitor),
+        "A fullscreen foreground window should stay above the overlay.");
+    AssertTrue(
+        OverlayTopmostPolicy.ShouldUseTopmost(new WindowBounds(100, 100, 1820, 980), monitor),
+        "A regular foreground window should stay below the overlay.");
+    AssertTrue(
+        OverlayTopmostPolicy.ShouldUseTopmost(
+            new WindowBounds(-8, -8, 1928, 1088),
+            monitor,
+            hasStandardFrame: true),
+        "A maximized standard window should stay below the overlay even when the taskbar auto-hides.");
 }
 
 static void NotificationStoreTrimHistory()

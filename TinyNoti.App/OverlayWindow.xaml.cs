@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using TinyNoti.Core;
 
 namespace TinyNoti.App;
 
@@ -15,9 +16,16 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
 {
     private const double CompactCardHeight = 136;
     private const double ImageCardHeight = 216;
+    private const int GwlStyle = -16;
     private const int GwlExStyle = -20;
+    private const int WsCaption = 0x00C00000;
     private const int WsExNoActivate = 0x08000000;
     private const int WsExToolWindow = 0x00000080;
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoMove = 0x0002;
+    private const uint SwpNoActivate = 0x0010;
+    private static readonly IntPtr HwndTopmost = new(-1);
+    private static readonly IntPtr HwndNoTopmost = new(-2);
     private double _overlayHeight = 560;
     private double _maxListHeight = 480;
     private double _contentMinHeight;
@@ -149,11 +157,12 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
         CardsVerticalAlignment = VerticalAlignment.Top;
     }
 
-    public bool PrepareShowForLayout()
+    public bool PrepareShowForLayout(WindowBounds targetMonitor)
     {
         OverlayRoot.BeginAnimation(OpacityProperty, null);
         var rootTransform = EnsureRootTransform();
         rootTransform.BeginAnimation(TranslateTransform.XProperty, null);
+        ApplyPresentationZOrder(targetMonitor);
 
         if (_isOverlayPresented && !_isHiding)
         {
@@ -288,6 +297,31 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
         var handle = new WindowInteropHelper(this).Handle;
         var style = GetWindowLong(handle, GwlExStyle);
         SetWindowLong(handle, GwlExStyle, style | WsExNoActivate | WsExToolWindow);
+    }
+
+    private void ApplyPresentationZOrder(WindowBounds targetMonitor)
+    {
+        var handle = new WindowInteropHelper(this).EnsureHandle();
+        var foregroundHandle = GetForegroundWindow();
+        var foregroundHasStandardFrame = foregroundHandle != IntPtr.Zero
+            && (GetWindowLong(foregroundHandle, GwlStyle) & WsCaption) != 0;
+        var shouldUseTopmost = foregroundHandle == IntPtr.Zero
+            || foregroundHandle == handle
+            || !GetWindowRect(foregroundHandle, out var foregroundRect)
+            || OverlayTopmostPolicy.ShouldUseTopmost(
+                new WindowBounds(foregroundRect.Left, foregroundRect.Top, foregroundRect.Right, foregroundRect.Bottom),
+                targetMonitor,
+                foregroundHasStandardFrame);
+
+        Topmost = shouldUseTopmost;
+        SetWindowPos(
+            handle,
+            shouldUseTopmost ? HwndTopmost : HwndNoTopmost,
+            0,
+            0,
+            0,
+            0,
+            SwpNoMove | SwpNoSize | SwpNoActivate);
     }
 
     private void ClearAll_Click(object sender, RoutedEventArgs e)
@@ -618,4 +652,31 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
 
     [DllImport("user32.dll")]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect rect);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int x,
+        int y,
+        int width,
+        int height,
+        uint flags);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
 }
