@@ -52,6 +52,7 @@ public sealed class AppController : IDisposable
         _overlay.LaunchRequested += LaunchNotification;
         _overlay.ClearAllRequested += ClearAllNotifications;
         _overlay.HideOverlayRequested += HideOverlayForNow;
+        _overlay.WindowHeightChanged += RefreshOverlayPosition;
         _settings.PropertyChanged += Settings_PropertyChanged;
         UpdateMirroringStatus();
     }
@@ -293,7 +294,7 @@ public sealed class AppController : IDisposable
         });
     }
 
-    private void LaunchNotification(long displayId)
+    public void LaunchNotification(long displayId)
     {
         var snapshot = _store.FindByDisplayId(displayId);
 
@@ -428,7 +429,9 @@ public sealed class AppController : IDisposable
     {
         var screen = GetTargetScreen();
         var width = _overlay.ActualWidth > 0 ? _overlay.ActualWidth : 390;
-        var height = _overlay.OverlayHeight;
+        var availableHeight = Math.Max(260, screen.WorkingArea.Height - _settings.OffsetY);
+        _overlay.PrepareLayoutCapacity(availableHeight);
+        var height = _overlay.ActualHeight > 0 ? _overlay.ActualHeight : 180;
 
         _overlay.Left = _settings.Anchor is OverlayAnchor.TopLeft or OverlayAnchor.BottomLeft
             ? screen.WorkingArea.Left + _settings.OffsetX

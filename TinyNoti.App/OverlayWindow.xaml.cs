@@ -14,8 +14,6 @@ namespace TinyNoti.App;
 
 public partial class OverlayWindow : Window, INotifyPropertyChanged
 {
-    private const double CompactCardHeight = 136;
-    private const double ImageCardHeight = 216;
     private const int GwlStyle = -16;
     private const int GwlExStyle = -20;
     private const int WsCaption = 0x00C00000;
@@ -26,7 +24,7 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
     private const uint SwpNoActivate = 0x0010;
     private static readonly IntPtr HwndTopmost = new(-1);
     private static readonly IntPtr HwndNoTopmost = new(-2);
-    private double _overlayHeight = 560;
+    private double _maxAvailableHeight = 1000;
     private double _maxListHeight = 480;
     private double _contentMinHeight;
     private bool _leftAnchored;
@@ -61,6 +59,8 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
 
     public event Action? HideOverlayRequested;
 
+    public event Action? WindowHeightChanged;
+
     public ObservableCollection<NotificationCardViewModel> Cards { get; } = [];
 
     public bool HasCards => Cards.Count > 0;
@@ -73,11 +73,13 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
 
     public string CountText => Cards.Count == 1 ? "1 notification" : $"{Cards.Count} notifications";
 
-    public double OverlayHeight
+    public double MaxAvailableHeight
     {
-        get => _overlayHeight;
-        set => SetField(ref _overlayHeight, value);
+        get => _maxAvailableHeight;
+        set => SetField(ref _maxAvailableHeight, value);
     }
+
+    public double OverlayHeight => ActualHeight > 0 ? ActualHeight : _maxAvailableHeight;
 
     public double MaxListHeight
     {
@@ -123,11 +125,11 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
 
     public void PrepareLayoutCapacity(double availableHeight)
     {
-        OverlayHeight = availableHeight;
-        MaxListHeight = Math.Max(180, availableHeight - HeaderChromeHeight());
+        MaxAvailableHeight = availableHeight;
+        var headerHeight = HeaderChromeHeight();
+        var scrollMargins = CardsScrollViewer.Margin.Top + CardsScrollViewer.Margin.Bottom;
+        MaxListHeight = Math.Max(112, availableHeight - headerHeight - scrollMargins);
         ContentMinHeight = 0;
-        GlassCornerRadius = new CornerRadius(16, 16, 0, 0);
-        BottomFadeVisibility = Visibility.Visible;
     }
 
     public void SetCards(IEnumerable<NotificationCardViewModel> cards, bool leftAnchored)
@@ -140,6 +142,7 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
 
         SyncCards(cards.ToArray());
         CardsVerticalAlignment = VerticalAlignment.Top;
+        CardsScrollViewer.ScrollToTop();
 
         if (shouldAnimateReflow)
         {
@@ -155,6 +158,7 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
         SetEmptyState(true);
         Cards.Clear();
         CardsVerticalAlignment = VerticalAlignment.Top;
+        CardsScrollViewer.ScrollToTop();
     }
 
     public bool PrepareShowForLayout(WindowBounds targetMonitor)
@@ -187,23 +191,28 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
 
     public void FitToContentHeight(double availableHeight)
     {
+        PrepareLayoutCapacity(availableHeight);
         UpdateLayout();
+        UpdateAdaptiveChrome();
+    }
 
-        var headerHeight = HeaderChromeHeight();
-        var scrollMargins = CardsScrollViewer.Margin.Top + CardsScrollViewer.Margin.Bottom;
-        var maxGlassHeight = Math.Max(180, availableHeight - headerHeight);
-        var measuredCardsHeight = MeasureCardsHeight();
-        var desiredGlassHeight = Math.Clamp(measuredCardsHeight + scrollMargins, 132, maxGlassHeight);
-        var desiredOverlayHeight = Math.Min(availableHeight, headerHeight + desiredGlassHeight);
-        var fillsAvailableHeight = desiredOverlayHeight >= availableHeight - 1;
-
-        OverlayHeight = desiredOverlayHeight;
-        MaxListHeight = Math.Max(112, desiredGlassHeight - scrollMargins);
-        ContentMinHeight = 0;
+    public void UpdateAdaptiveChrome()
+    {
+        var fillsAvailableHeight = MaxAvailableHeight > 0 && ActualHeight >= MaxAvailableHeight - 1;
         GlassCornerRadius = fillsAvailableHeight
             ? new CornerRadius(16, 16, 0, 0)
             : new CornerRadius(16);
         BottomFadeVisibility = fillsAvailableHeight ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+    {
+        base.OnRenderSizeChanged(sizeInfo);
+        if (sizeInfo.HeightChanged)
+        {
+            UpdateAdaptiveChrome();
+            WindowHeightChanged?.Invoke();
+        }
     }
 
     public void FinishShowAnimation(bool shouldAnimate)
@@ -239,12 +248,13 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
         rootTransform.BeginAnimation(TranslateTransform.XProperty, slide);
     }
 
-    public void HideWithAnimation()
+    public void HideWithAnimation(Action? onCompleted = null)
     {
         if (!_isOverlayPresented)
         {
             if (IsParkedOffscreen())
             {
+                onCompleted?.Invoke();
                 return;
             }
 
@@ -272,6 +282,7 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
         {
             if (!_isHiding)
             {
+                onCompleted?.Invoke();
                 return;
             }
 
@@ -285,6 +296,7 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
                 OverlayRoot.Opacity = 1;
                 rootTransform.X = 0;
             });
+            onCompleted?.Invoke();
         };
 
         OverlayRoot.BeginAnimation(OpacityProperty, opacity);
@@ -327,7 +339,19 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
     private void ClearAll_Click(object sender, RoutedEventArgs e)
     {
         e.Handled = true;
-        ClearAllRequested?.Invoke();
+        if (sender is FrameworkElement button)
+        {
+            button.IsEnabled = false;
+        }
+
+        HideWithAnimation(() =>
+        {
+            ClearAllRequested?.Invoke();
+            if (sender is FrameworkElement button)
+            {
+                button.IsEnabled = true;
+            }
+        });
     }
 
     private void HideOverlay_Click(object sender, RoutedEventArgs e)
@@ -483,37 +507,7 @@ public partial class OverlayWindow : Window, INotifyPropertyChanged
         return -1;
     }
 
-    private double MeasureCardsHeight()
-    {
-        CardsItems.Measure(new System.Windows.Size(CardsItems.ActualWidth > 0 ? CardsItems.ActualWidth : 384, double.PositiveInfinity));
-        var desiredHeight = CardsItems.DesiredSize.Height;
-        var estimatedHeight = EstimateCardsHeight();
-        var measuredHeight = 0d;
-        for (var i = 0; i < Cards.Count; i++)
-        {
-            if (CardsItems.ItemContainerGenerator.ContainerFromIndex(i) is FrameworkElement container)
-            {
-                measuredHeight += Math.Max(container.ActualHeight, container.DesiredSize.Height);
-            }
-        }
 
-        if (measuredHeight > 0 && measuredHeight <= estimatedHeight + 80)
-        {
-            return measuredHeight;
-        }
-
-        if (desiredHeight > 0 && desiredHeight <= estimatedHeight + 80)
-        {
-            return desiredHeight;
-        }
-
-        return estimatedHeight;
-    }
-
-    private double EstimateCardsHeight()
-    {
-        return Cards.Sum(static card => string.IsNullOrWhiteSpace(card.ImageUri) ? CompactCardHeight : ImageCardHeight);
-    }
 
     private Dictionary<long, double> CaptureCardPositions()
     {
