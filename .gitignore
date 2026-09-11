@@ -37,3 +37,14 @@ Desktop.ini
 
 # Local handoff notes
 HANDOFF.md
+
+# Temporary debugging and discussion assets
+assets/*.jpg
+
+# Local SQLite temporary files
+*.db-shm
+*.db-wal
+
+# OS metadata
+.DS_Store
+

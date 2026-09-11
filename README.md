@@ -23,7 +23,7 @@ The current build targets Windows 10.0.22000.0 or newer and has only been tested
 <details open>
 <summary>Main window</summary>
 
-![tinynoti main window](assets/github_main_window.png)
+![tinynoti main window](assets/github_main_window_v1.png)
 
 </details>
 
@@ -36,15 +36,14 @@ The current build targets Windows 10.0.22000.0 or newer and has only been tested
 
 ## Features
 
-- Mirror Windows toast notifications to a custom position.
-- Choose overlay anchor, display, offset, and auto-hide timing.
-- Pause or resume mirroring from the main app or the bottom-right system tray.
-- Keep a local recent-notification history for the current app session.
-- Filter notifications by app name or App User Model ID using blacklist or whitelist mode.
-- Dismiss individual notifications or clear all mirrored notifications.
-- Try to preserve notification opening behavior as much as possible: open a URL found in the notification text first, then apply app-specific rules, then try to launch the source app. Full behavior cannot be guaranteed for every notification.
-- Try to show notification images when Windows provides a readable image URI.
-- Store user settings under `%APPDATA%\TinyNoti\settings.json`.
+- **Custom Overlay Placement**: Mirror Windows toast notifications to any screen corner with configurable offsets, multi-monitor support, and custom auto-hide timers.
+- **Adaptive Frosted Glass Chrome**: Seamlessly hugs cards as a compact floating island when few notifications are present, and expands to full screen height with smooth scrolling and subtle bottom gradient fade when filled.
+- **Notification Deep Linking**: Reads underlying Windows notification database (`wpndatabase.db`) and parses Toast XML payloads to extract direct deep links for Slack (channels, direct messages, and threads) and Asana (task URLs), beyond generic app launching.
+- **Modern Three-Tab Navigation**: Clean, organized interface with dedicated tabs for Recent notifications, Overlay position settings, and Notification filtering, plus a collapsible global Settings panel.
+- **Refined Notification Cards**: High-hierarchy layout with circular sender avatars, timestamp, clear app branding, and 1/2 card width image previews with smooth bottom gradient fade.
+- **Flexible App Filtering**: Filter notifications by app name or App User Model ID (AUMID) using Blacklist or Whitelist modes.
+- **System Tray Controls**: Quickly pause/resume mirroring, view recent notifications, or clear all mirrored notifications directly from the tray icon.
+- **Lightweight & Persistent**: Native WPF performance, low memory footprint, and settings saved automatically to `%APPDATA%\TinyNoti\settings.json`.
 
 ## Author's Note
 
@@ -96,7 +95,7 @@ Signed MSIX test package flow:
 .\scripts\package-msix.ps1
 Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\TrustedPeople
 Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\Root
-Add-AppxPackage -Path .\artifacts\msix\TinyNoti_0.1.0.0_win-x64.msix -ForceApplicationShutdown
+Add-AppxPackage -Path .\artifacts\msix\TinyNoti_1.0.0.0_win-x64.msix -ForceApplicationShutdown
 ```
 
 Or run the package, certificate, and install steps together:
@@ -146,7 +145,7 @@ tinynoti 會監聽 Windows 通知中心，並用輕量的 WPF 浮動視窗顯示
 <details open>
 <summary>主視窗</summary>
 
-![tinynoti 主視窗](assets/github_main_window.png)
+![tinynoti 主視窗](assets/github_main_window_v1.png)
 
 </details>
 
@@ -159,15 +158,14 @@ tinynoti 會監聽 Windows 通知中心，並用輕量的 WPF 浮動視窗顯示
 
 ## 功能
 
-- 將 Windows toast 通知鏡像到自訂位置。
-- 可設定浮動通知的角落位置、螢幕、邊距與自動隱藏秒數。
-- 可從主程式或右下角的系統匣暫停、恢復鏡像。
-- 保留目前執行期間的近期通知紀錄。
-- 可用黑名單或白名單模式，依應用程式名稱或 App User Model ID 過濾通知。
-- 可關閉單一通知或清除全部鏡像通知。
-- 盡可能呈現開啟通知的來源：優先開啟通知文字中的網址，其次套用應用程式規則，最後嘗試啟動來源應用程式。但無法保證全數功能可以完整呈現。
-- 當 Windows 有提供可讀取的圖片 URI 時，盡可能顯示通知圖片。
-- 使用者設定儲存在 `%APPDATA%\TinyNoti\settings.json`。
+- **自訂浮動通知位置**：將 Windows 通知鏡像至指定螢幕角落，自由設定水平與垂直邊距、支援多螢幕選取與自訂自動隱藏秒數。
+- **自適應磨砂玻璃外觀**：卡片少時自動收合為精緻的四邊圓角懸浮島嶼；卡片多時自適應撐滿螢幕高度，支援順暢滾動與優雅的下緣漸層遮罩。
+- **深度跳轉（Deep Linking）**：深度讀取 Windows 底層通知資料庫（`wpndatabase.db`）並解析 Toast XML Payload，突破點擊通知僅能開啟首頁的限制，直接跳轉 Slack 頻道／私訊討論串與 Asana 任務連結。
+- **全新三欄現代化介面**：清晰的分頁架構（近期通知、浮動視窗位置、過濾清單）以及左下角平滑展開收合的 Settings 設定面板。
+- **高質感卡片排版**：由上而下清晰資訊層次、圓形發送者頭像，以及 1/2 卡片寬度並帶有下緣漸層過渡的附件圖片預覽。
+- **應用程式過濾機制**：支援黑名單與白名單模式，可依據應用程式名稱或 AUMID 精準篩選。
+- **系統匣快捷操作**：右下角系統匣選單可一鍵暫停／恢復鏡像、開啟近期通知或清除所有桌面通知。
+- **輕量且自動持久化**：原生 WPF 打造、資源佔用極低，所有設定自動保存於 `%APPDATA%\TinyNoti\settings.json`。
 
 ## 作者碎碎唸
 
@@ -219,7 +217,7 @@ Get-StartApps | Where-Object { $_.Name -like '*TinyNoti*' }
 .\scripts\package-msix.ps1
 Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\TrustedPeople
 Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\Root
-Add-AppxPackage -Path .\artifacts\msix\TinyNoti_0.1.0.0_win-x64.msix -ForceApplicationShutdown
+Add-AppxPackage -Path .\artifacts\msix\TinyNoti_1.0.0.0_win-x64.msix -ForceApplicationShutdown
 ```
 
 也可以一次執行封裝、匯入憑證與安裝：
