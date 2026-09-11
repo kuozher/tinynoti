@@ -59,52 +59,37 @@ scripts/           Local packaging scripts
 assets/            README images and project visuals
 ```
 
-## Requirements
+## Installation
 
-- Windows 11, tested. Windows 10 is not currently guaranteed because the app targets Windows 10.0.22000.0 or newer.
+### Option A: Install MSIX Package (Recommended for Users)
+
+1. Download `TinyNoti_1.0.0.0_win-x64.msix` and `TinyNoti.cer` from [Releases](https://github.com/kuozher/tinynoti/releases).
+2. Double-click `TinyNoti.cer` ➔ Click **Install Certificate** ➔ Select Store Location **Current User** ➔ Place certificate in **Trusted People** (or **Trusted Root Certification Authorities**).
+3. Double-click `TinyNoti_1.0.0.0_win-x64.msix` to complete installation.
+4. Launch **TinyNoti** from the Start Menu, then click **Request access** in the main window to grant notification permissions.
+
+> [!TIP]
+> **Recommended Windows Notification Setup**:  
+> Installing TinyNoti does not automatically disable native Windows notification banners. We recommend going to Windows **Settings > System > Notifications**, finding your frequent notification apps, and unchecking **"Show notification banners"** while keeping notifications enabled. This allows notifications to arrive quietly in Notification Center without bottom-right popup clutter, and TinyNoti will mirror and present them smoothly where you want!
+
+### Option B: Build & Test from Source (For Developers)
+
+**Requirements**:
+- Windows 11 (tested on build 22000 or newer)
 - .NET 10 SDK
-- Windows 10/11 SDK, required for local MSIX packaging
+- Windows 10/11 SDK (required for local MSIX packaging)
 
-## Build
-
+**Build & Run Tests**:
 ```powershell
 dotnet build .\TinyNoti.slnx
 dotnet run --project .\TinyNoti.Tests\TinyNoti.Tests.csproj
 ```
 
-## Local MSIX Testing
-
-The debug EXE can show the UI, but Windows may reject notification-listener event subscription without package identity. For testing real notification capture, register or install a local MSIX package.
-
-Recommended local flow:
-
+**Local Loose MSIX (Fastest Dev Loop)**:
 ```powershell
 .\scripts\package-msix.ps1 -RegisterLoose
 Start-Process 'shell:AppsFolder\TinyNoti_n4dsdbrj5xmcc!TinyNoti'
 ```
-
-If the package family name changes, find the launch ID with:
-
-```powershell
-Get-StartApps | Where-Object { $_.Name -like '*TinyNoti*' }
-```
-
-Signed MSIX test package flow:
-
-```powershell
-.\scripts\package-msix.ps1
-Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\TrustedPeople
-Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\Root
-Add-AppxPackage -Path .\artifacts\msix\TinyNoti_1.0.0.0_win-x64.msix -ForceApplicationShutdown
-```
-
-Or run the package, certificate, and install steps together:
-
-```powershell
-.\scripts\package-msix.ps1 -InstallCertificate -InstallPackage
-```
-
-Then launch tinynoti from Start, press `Request access`, and test with a notification-producing action such as `Win + Shift + S`.
 
 ## Notes and Limits
 
@@ -181,52 +166,37 @@ scripts/           本機封裝腳本
 assets/            README 圖片與專案視覺素材
 ```
 
-## 需求
+## 安裝方式
 
-- Windows 11，已測試。由於目前程式以 Windows 10.0.22000.0 以上為目標，Windows 10 尚未保證支援。
+### 方法 A：直接安裝封裝套件（一般使用者推薦）
+
+1. 前往 [Releases 發布頁面](https://github.com/kuozher/tinynoti/releases) 下載最新版的 `TinyNoti_1.0.0.0_win-x64.msix` 與 `TinyNoti.cer`。
+2. 雙擊 `TinyNoti.cer` ➔ 點擊「安裝憑證」➔ 存放區位置選擇「目前使用者」➔ 將憑證放入「**信任的人**」（或「受信任的根憑證授權單位」）。
+3. 雙擊 `TinyNoti_1.0.0.0_win-x64.msix` 即可完成安裝。
+4. 從開始功能表啟動 **TinyNoti**，於主視窗點擊「Request access」按鈕授權通知存取權限。
+
+> [!TIP]
+> **推薦的 Windows 通知搭配設定**：  
+> 安裝 TinyNoti 並不會自動關閉 Windows 原生通知橫幅。建議前往 Windows 的「**設定 > 系統 > 通知**」，找到您常跳通知的應用程式，將「**顯示通知橫幅**」取消勾選（保留在通知中心顯示）。如此一來，通知就會安靜地進入通知中心，由 TinyNoti 優雅地鏡像到您指定的位置，不會在螢幕右下角重複彈出！
+
+### 方法 B：從原始碼建置與測試（開發者）
+
+**需求**：
+- Windows 11（版本 22000 以上）
 - .NET 10 SDK
-- Windows 10/11 SDK，本機 MSIX 封裝需要使用
+- Windows 10/11 SDK（本機封裝 MSIX 需要使用）
 
-## 建置
-
+**編譯與執行單元測試**：
 ```powershell
 dotnet build .\TinyNoti.slnx
 dotnet run --project .\TinyNoti.Tests\TinyNoti.Tests.csproj
 ```
 
-## 本機 MSIX 測試
-
-Debug EXE 可以顯示介面，但若沒有 package identity，Windows 可能會拒絕通知監聽事件訂閱。若要測試實際通知擷取，建議註冊或安裝本機 MSIX 套件。
-
-建議的本機測試流程：
-
+**本機 Loose MSIX 註冊（推薦快速除錯流程）**：
 ```powershell
 .\scripts\package-msix.ps1 -RegisterLoose
 Start-Process 'shell:AppsFolder\TinyNoti_n4dsdbrj5xmcc!TinyNoti'
 ```
-
-如果 package family name 有變更，可用以下指令查詢啟動 ID：
-
-```powershell
-Get-StartApps | Where-Object { $_.Name -like '*TinyNoti*' }
-```
-
-簽署 MSIX 測試套件流程：
-
-```powershell
-.\scripts\package-msix.ps1
-Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\TrustedPeople
-Import-Certificate -FilePath .\artifacts\msix\cert\TinyNoti.cer -CertStoreLocation Cert:\CurrentUser\Root
-Add-AppxPackage -Path .\artifacts\msix\TinyNoti_1.0.0.0_win-x64.msix -ForceApplicationShutdown
-```
-
-也可以一次執行封裝、匯入憑證與安裝：
-
-```powershell
-.\scripts\package-msix.ps1 -InstallCertificate -InstallPackage
-```
-
-接著從開始功能表啟動 tinynoti，按下 `Request access`，再用會產生通知的操作測試，例如 `Win + Shift + S`。
 
 ## 注意事項與限制
 
