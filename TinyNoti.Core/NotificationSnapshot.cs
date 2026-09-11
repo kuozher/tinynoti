@@ -20,7 +20,9 @@ public sealed record NotificationSnapshot(
     string? AppIconUri,
     LaunchHint? ActivationHint,
     bool CanDismiss,
-    bool CanLaunchBestEffort)
+    bool CanLaunchBestEffort,
+    string? RawPayload = null,
+    string? AvatarUri = null)
 {
     public string IdentityKey => $"{AppUserModelId}|{Id}|{DisplayId}|{CreatedAt:O}";
 

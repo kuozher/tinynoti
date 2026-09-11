@@ -7,6 +7,7 @@ namespace TinyNoti.App;
 public sealed class NotificationListenerService : IDisposable
 {
     private readonly UserNotificationListener _listener = UserNotificationListener.Current;
+    private readonly WindowsNotificationPayloadReader _payloadReader = new();
     private bool _started;
 
     public event Action<NotificationSnapshot>? NotificationReceived;
@@ -93,6 +94,8 @@ public sealed class NotificationListenerService : IDisposable
         {
             _listener.NotificationChanged -= Listener_NotificationChanged;
         }
+
+        _payloadReader.Dispose();
     }
 
     private async void Listener_NotificationChanged(UserNotificationListener sender, UserNotificationChangedEventArgs args)
@@ -113,7 +116,8 @@ public sealed class NotificationListenerService : IDisposable
 
     private async Task PublishAsync(UserNotification notification)
     {
-        var snapshot = await NotificationSnapshotFactory.FromUserNotificationAsync(notification);
+        var rawPayload = await _payloadReader.TryGetPayloadAsync(notification.Id);
+        var snapshot = await NotificationSnapshotFactory.FromUserNotificationAsync(notification, rawPayload);
         NotificationReceived?.Invoke(snapshot);
     }
 }

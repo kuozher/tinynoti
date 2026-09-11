@@ -10,7 +10,15 @@ var tests = new (string Name, Action Body)[]
     ("stacks repeated notification events and removes by display id", NotificationStoreState),
     ("trims history by display id", NotificationStoreTrimHistory),
     ("calculates bottom right overlay positions", OverlayPlacement),
-    ("keeps overlay below fullscreen foreground windows", FullscreenTopmostPolicy)
+    ("keeps overlay below fullscreen foreground windows", FullscreenTopmostPolicy),
+    ("resolves direct URL from toast payload", PayloadDirectUrl),
+    ("resolves protocol URI from toast payload", PayloadProtocolUri),
+    ("resolves Slack deep link from JSON toast payload", PayloadSlackJson),
+    ("resolves Slack deep link from query string toast payload", PayloadSlackQueryString),
+    ("resolves Asana task link from JSON toast payload", PayloadAsanaJson),
+    ("resolves action argument URL as fallback", PayloadActionArgumentsFallback),
+    ("falls back gracefully on invalid or empty toast payload", PayloadFallbackGracefully),
+    ("preserves avatar and distinguishes content images", AvatarAndContentImageDistinction)
 };
 
 var failed = 0;
@@ -229,4 +237,112 @@ static void AssertFalse(bool value, string message)
     {
         throw new InvalidOperationException(message);
     }
+}
+
+static void PayloadDirectUrl()
+{
+    var snapshot = Snapshot("Browser", "chrome") with
+    {
+        RawPayload = @"<toast launch=""https://example.com/details/999""><visual><binding template=""ToastGeneric""><text>Title</text></binding></visual></toast>"
+    };
+    var hint = LaunchTargetResolver.Resolve(snapshot);
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("https://example.com/details/999", hint.Target);
+}
+
+static void PayloadProtocolUri()
+{
+    var snapshot = Snapshot("Teams", "msteams") with
+    {
+        RawPayload = @"<toast launch=""msteams:/l/message/19:chat?tenantId=abc""><visual><binding template=""ToastGeneric""><text>Title</text></binding></visual></toast>"
+    };
+    var hint = LaunchTargetResolver.Resolve(snapshot);
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("msteams:/l/message/19:chat?tenantId=abc", hint.Target);
+}
+
+static void PayloadSlackJson()
+{
+    var snapshot = Snapshot("Slack", "91750D7E.Slack_8she8kybcnzg4!Slack") with
+    {
+        Body = "Hey check this channel",
+        RawPayload = @"<toast launch=""{&quot;type&quot;:&quot;message&quot;,&quot;team_id&quot;:&quot;T0123&quot;,&quot;channel_id&quot;:&quot;C0456&quot;,&quot;message_ts&quot;:&quot;1712345678.000100&quot;}""><visual><binding template=""ToastGeneric""><text>Bob</text><text>Hey check this channel</text></binding></visual></toast>"
+    };
+    var hint = LaunchTargetResolver.Resolve(snapshot);
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("slack://channel?team=T0123&id=C0456&message=1712345678.000100", hint.Target);
+}
+
+static void PayloadSlackQueryString()
+{
+    var snapshot = Snapshot("Slack", "com.slack.desktop") with
+    {
+        RawPayload = @"<toast launch=""team_id=T999&amp;channel_id=C888&amp;message_ts=17000.1""><visual><binding template=""ToastGeneric""><text>Message</text></binding></visual></toast>"
+    };
+    var hint = LaunchTargetResolver.Resolve(snapshot);
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("slack://channel?team=T999&id=C888&message=17000.1", hint.Target);
+}
+
+static void PayloadAsanaJson()
+{
+    var snapshot = Snapshot("Asana", "com.squirrel.asana.Asana") with
+    {
+        RawPayload = @"<toast launch=""{&quot;task_id&quot;:&quot;9876543210&quot;}""><visual><binding template=""ToastGeneric""><text>Task Updated</text></binding></visual></toast>"
+    };
+    var hint = LaunchTargetResolver.Resolve(snapshot);
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("https://app.asana.com/0/0/9876543210", hint.Target);
+}
+
+static void PayloadActionArgumentsFallback()
+{
+    var snapshot = Snapshot("App", "custom.app") with
+    {
+        RawPayload = @"<toast><visual><binding template=""ToastGeneric""><text>Alert</text></binding></visual><actions><action content=""Open"" arguments=""https://service.internal/ticket/42"" activationType=""protocol""/></actions></toast>"
+    };
+    var hint = LaunchTargetResolver.Resolve(snapshot);
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("https://service.internal/ticket/42", hint.Target);
+}
+
+static void PayloadFallbackGracefully()
+{
+    var snapshotWithTextUrl = Snapshot("Unknown", "some.app") with
+    {
+        Body = "See https://example.org/fallback",
+        RawPayload = @"<toast launch=""internal_id_123""><visual><binding template=""ToastGeneric""><text>Alert</text></binding></visual></toast>"
+    };
+    var hint = LaunchTargetResolver.Resolve(snapshotWithTextUrl);
+    AssertEqual(LaunchTargetKind.Url, hint.Kind);
+    AssertEqual("https://example.org/fallback", hint.Target);
+
+    var snapshotWithoutUrl = Snapshot("Unknown", "some.app") with
+    {
+        Body = "Nothing here",
+        RawPayload = @"not-valid-xml-data"
+    };
+    var hint2 = LaunchTargetResolver.Resolve(snapshotWithoutUrl);
+    AssertEqual(LaunchTargetKind.App, hint2.Kind);
+    AssertEqual("some.app", hint2.Target);
+}
+
+static void AvatarAndContentImageDistinction()
+{
+    var candidates = new List<ImageCandidate>
+    {
+        new("https://example.com/avatar.png", "avatar"),
+        new("https://example.com/attachment.jpg", "payload-image")
+    };
+
+    var snapshot = Snapshot("Slack", "com.slack.desktop") with
+    {
+        ImageCandidates = candidates,
+        AvatarUri = "https://example.com/avatar.png"
+    };
+
+    AssertEqual("https://example.com/avatar.png", snapshot.AvatarUri);
+    AssertEqual(2, snapshot.ImageCandidates.Count);
+    AssertEqual("avatar", snapshot.ImageCandidates[0].Kind);
+    AssertEqual("payload-image", snapshot.ImageCandidates[1].Kind);
 }

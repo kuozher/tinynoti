@@ -55,6 +55,15 @@ public sealed class LaunchTargetResolver
 
     public LaunchHint ResolveBestEffort(NotificationSnapshot snapshot)
     {
+        if (!string.IsNullOrWhiteSpace(snapshot.RawPayload))
+        {
+            var payloadHint = ToastPayloadParser.TryResolve(snapshot.RawPayload, snapshot.AppName, snapshot.AppUserModelId);
+            if (payloadHint is not null && payloadHint.Kind != LaunchTargetKind.None)
+            {
+                return payloadHint;
+            }
+        }
+
         var urlMatch = UrlPattern.Match(snapshot.SearchText);
         if (urlMatch.Success)
         {

@@ -13,12 +13,15 @@ public static class NotificationSnapshotFactory
 {
     private static long _nextDisplayId;
 
-    public static async Task<NotificationSnapshot> FromUserNotificationAsync(UserNotification userNotification)
+    public static async Task<NotificationSnapshot> FromUserNotificationAsync(
+        UserNotification userNotification,
+        string? rawPayload = null)
     {
         var appName = ReadAppName(userNotification);
         var appUserModelId = ReadAppUserModelId(userNotification);
         var lines = ReadTextLines(userNotification.Notification).ToArray();
-        var images = ReadImages(lines).ToArray();
+        var images = ReadImages(lines, rawPayload).ToArray();
+        var avatarUri = images.FirstOrDefault(i => string.Equals(i.Kind, "avatar", StringComparison.OrdinalIgnoreCase))?.Uri;
         var appIconUri = await ReadAppIconAsync(userNotification, appUserModelId, appName);
         var title = lines.FirstOrDefault() ?? string.Empty;
         var body = string.Join(Environment.NewLine, lines.Skip(1));
@@ -38,7 +41,9 @@ public static class NotificationSnapshotFactory
             appIconUri,
             null,
             true,
-            true);
+            true,
+            rawPayload,
+            avatarUri);
 
         var hint = LaunchTargetResolver.Resolve(snapshot);
         return snapshot with { ActivationHint = hint };
@@ -134,7 +139,7 @@ public static class NotificationSnapshotFactory
             LineAlignment = System.Drawing.StringAlignment.Center
         };
 
-        using var iconShape = CreateRoundedRectanglePath(new System.Drawing.Rectangle(0, 0, 96, 96), 18);
+        using var iconShape = CreateRoundedRectanglePath(new System.Drawing.Rectangle(0, 0, 96, 96), 48);
         graphics.FillPath(background, iconShape);
         graphics.DrawString(GetInitials(name), font, textBrush, new System.Drawing.RectangleF(0, 1, 96, 96), format);
         bitmap.Save(path, ImageFormat.Png);
@@ -295,30 +300,87 @@ public static class NotificationSnapshotFactory
         }
     }
 
-    private static IEnumerable<ImageCandidate> ReadImages(IEnumerable<string> lines)
+    private static IEnumerable<ImageCandidate> ReadImages(IEnumerable<string> lines, string? rawPayload = null)
     {
+        var candidates = new List<ImageCandidate>();
+
+        if (!string.IsNullOrWhiteSpace(rawPayload))
+        {
+            try
+            {
+                var doc = System.Xml.Linq.XDocument.Parse(rawPayload);
+                foreach (var img in doc.Descendants().Where(e => string.Equals(e.Name.LocalName, "image", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var src = img.Attribute("src")?.Value?.Trim();
+                    if (!string.IsNullOrWhiteSpace(src) && IsValidPayloadImageUri(src))
+                    {
+                        var placement = img.Attribute("placement")?.Value?.Trim();
+                        var hintCrop = img.Attribute("hint-crop")?.Value?.Trim();
+
+                        var isAvatar = string.Equals(placement, "appLogoOverride", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(hintCrop, "circle", StringComparison.OrdinalIgnoreCase)
+                            || IsAvatarUri(src);
+
+                        candidates.Add(new ImageCandidate(src, isAvatar ? "avatar" : "payload-image"));
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
         foreach (var line in lines)
         {
             var tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             foreach (var token in tokens)
             {
                 var uri = token.TrimEnd('.', ',', ';', ')', ']');
-                if (IsImageUri(uri))
+                if (IsImageFileUri(uri))
                 {
-                    yield return new ImageCandidate(uri, "text-uri");
+                    candidates.Add(new ImageCandidate(uri, "text-uri"));
                 }
             }
         }
+
+        return candidates;
     }
 
-    private static bool IsImageUri(string value)
+    private static bool IsValidPayloadImageUri(string value)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
         {
             return false;
         }
 
-        if (uri.Scheme is not ("http" or "https" or "file"))
+        return uri.Scheme is "http" or "https" or "file" or "ms-appdata" or "ms-appx";
+    }
+
+    private static bool IsAvatarUri(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var lower = value.ToLowerInvariant();
+        return lower.Contains("avatar")
+            || lower.Contains("profile_photo")
+            || lower.Contains("profile_image")
+            || lower.Contains("profile-photo")
+            || lower.Contains("user_photo")
+            || lower.Contains("userphoto")
+            || lower.Contains("user_avatar");
+    }
+
+    private static bool IsImageFileUri(string value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        if (uri.Scheme is not ("http" or "https" or "file" or "ms-appdata" or "ms-appx"))
         {
             return false;
         }
