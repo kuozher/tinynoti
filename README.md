@@ -63,7 +63,7 @@ assets/            README images and project visuals
 
 ### Option A: Install MSIX Package (Recommended for Users)
 
-1. Download `TinyNoti_1.0.0.0_win-x64.msix` and `TinyNoti.cer` from [Releases](https://github.com/kuozher/tinynoti/releases).
+1. Download `TinyNoti_1.0.0.0_win-x64.zip` from [Releases](https://github.com/kuozher/tinynoti/releases) and extract it.
 2. Double-click `TinyNoti.cer` ➔ Click **Install Certificate** ➔ Select Store Location **Current User** ➔ Place certificate in **Trusted People** (or **Trusted Root Certification Authorities**).
 3. Double-click `TinyNoti_1.0.0.0_win-x64.msix` to complete installation.
 4. Launch **TinyNoti** from the Start Menu, then click **Request access** in the main window to grant notification permissions.
@@ -170,7 +170,7 @@ assets/            README 圖片與專案視覺素材
 
 ### 方法 A：直接安裝封裝套件（一般使用者推薦）
 
-1. 前往 [Releases 發布頁面](https://github.com/kuozher/tinynoti/releases) 下載最新版的 `TinyNoti_1.0.0.0_win-x64.msix` 與 `TinyNoti.cer`。
+1. 前往 [Releases 發布頁面](https://github.com/kuozher/tinynoti/releases) 下載最新版的 `TinyNoti_1.0.0.0_win-x64.zip` 並解壓縮。
 2. 雙擊 `TinyNoti.cer` ➔ 點擊「安裝憑證」➔ 存放區位置選擇「目前使用者」➔ 將憑證放入「**信任的人**」（或「受信任的根憑證授權單位」）。
 3. 雙擊 `TinyNoti_1.0.0.0_win-x64.msix` 即可完成安裝。
 4. 從開始功能表啟動 **TinyNoti**，於主視窗點擊「Request access」按鈕授權通知存取權限。
