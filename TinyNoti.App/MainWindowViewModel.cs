@@ -12,6 +12,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     private string _mirroringStatusText = string.Empty;
     private string _operationStatusText = string.Empty;
     private string _filterText = string.Empty;
+    private MainNavTab _selectedTab = MainNavTab.RecentNotifications;
+    private bool _isSettingsExpanded;
 
     public MainWindowViewModel(AppSettings settings)
     {
@@ -22,6 +24,30 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public AppSettings Settings { get; }
+
+    public MainNavTab SelectedTab
+    {
+        get => _selectedTab;
+        set
+        {
+            if (SetField(ref _selectedTab, value))
+            {
+                OnPropertyChanged(nameof(IsRecentTab));
+                OnPropertyChanged(nameof(IsOverlayPositionTab));
+                OnPropertyChanged(nameof(IsFiltersTab));
+            }
+        }
+    }
+
+    public bool IsRecentTab => SelectedTab == MainNavTab.RecentNotifications;
+    public bool IsOverlayPositionTab => SelectedTab == MainNavTab.OverlayPosition;
+    public bool IsFiltersTab => SelectedTab == MainNavTab.Filters;
+
+    public bool IsSettingsExpanded
+    {
+        get => _isSettingsExpanded;
+        set => SetField(ref _isSettingsExpanded, value);
+    }
 
     public ObservableCollection<NotificationCardViewModel> History { get; } = [];
 
@@ -144,3 +170,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
 public sealed record AnchorOption(string Label, OverlayAnchor Value);
 
 public sealed record DisplayOption(int Index, string Label);
+
+public enum MainNavTab
+{
+    RecentNotifications,
+    OverlayPosition,
+    Filters
+}

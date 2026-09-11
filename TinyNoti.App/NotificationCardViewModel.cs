@@ -18,7 +18,13 @@ public sealed class NotificationCardViewModel
 
     public required string TimeText { get; init; }
 
+    public string? AvatarUri { get; init; }
+
     public string? ImageUri { get; init; }
+
+    public bool HasImage => !string.IsNullOrWhiteSpace(ImageUri);
+
+    public bool HasAvatar => !string.IsNullOrWhiteSpace(AvatarUri);
 
     public string? AppIconUri { get; init; }
 
@@ -30,6 +36,9 @@ public sealed class NotificationCardViewModel
 
     public static NotificationCardViewModel FromSnapshot(NotificationSnapshot snapshot)
     {
+        var avatar = snapshot.AvatarUri ?? snapshot.ImageCandidates.FirstOrDefault(c => string.Equals(c.Kind, "avatar", StringComparison.OrdinalIgnoreCase))?.Uri;
+        var contentImage = snapshot.ImageCandidates.FirstOrDefault(c => !string.Equals(c.Kind, "avatar", StringComparison.OrdinalIgnoreCase) && !string.Equals(c.Uri, avatar, StringComparison.OrdinalIgnoreCase))?.Uri;
+
         return new NotificationCardViewModel
         {
             DisplayId = snapshot.DisplayId,
@@ -39,7 +48,8 @@ public sealed class NotificationCardViewModel
             Title = string.IsNullOrWhiteSpace(snapshot.Title) ? "(No title)" : snapshot.Title,
             Body = snapshot.Body,
             TimeText = snapshot.CreatedAt.ToLocalTime().ToString("HH:mm"),
-            ImageUri = snapshot.ImageCandidates.FirstOrDefault()?.Uri,
+            AvatarUri = avatar,
+            ImageUri = contentImage,
             AppIconUri = snapshot.AppIconUri,
             CanDismiss = snapshot.CanDismiss,
             CanLaunchBestEffort = snapshot.CanLaunchBestEffort,
